@@ -1,0 +1,51 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title":   "Lavender Common Definitions",
+    "$defs":   {
+        "partial_identifier":    {
+            "title":       "Partial Identifier",
+            "description": "A partial identifier",
+            "type":        "string",
+            "pattern":     "^[a-z0-9/\\._-]+$"
+        },
+        "identifier":            {
+            "title":       "Identifier",
+            "description": "An identifier",
+            "type":        "string",
+            "pattern":     "^[a-z0-9_\\.-]+:[a-z0-9/\\._-]+$"
+        },
+        "identifier_or_partial": {
+            "title":       "Identifier or Partial Identifier",
+            "description": "Either an identifier or a partial identifier",
+            "anyOf":       [
+                { "$ref": "#/$defs/partial_identifier" },
+                { "$ref": "#/$defs/identifier" }
+            ]
+        },
+        "text":                  {
+            "title":       "Text",
+            "description": "A Minecraft text object",
+            "type":        "string"
+        },
+        "tag":                   {
+            "title":       "Tag",
+            "description": "A Minecraft tag",
+            "type":        "string",
+            "pattern":     "^#([a-z0-9_\\.-]+:)?[a-z0-9/\\._-]+$"
+        },
+        "itemstack":             {
+            "title":       "Item Stack",
+            "description": "A Minecraft item stack with optional nbt",
+            "type":        "string",
+            "pattern":     "^[a-z0-9_\\.-]+:[a-z0-9/\\._-]+(\\{.*\\})?$"
+        },
+        "itemstacks":            {
+            "title":       "Item Stacks",
+            "description": "Either a Minecraft item stack or a Minecraft tag",
+            "anyOf":       [
+                { "$ref": "#/$defs/itemstack" },
+                { "$ref": "#/$defs/tag" }
+            ]
+        }
+    }
+}

@@ -1,0 +1,68 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title":   "Lavender Book",
+    "$defs":   {
+        "book":   {
+            "type":       "object",
+            "properties": {
+                "texture":                            {
+                    "title":       "Texture",
+                    "description": "This is used to decide which texture to use for the GUI of your book. There are some built into Lavender following the lavender:textures/gui/<color>_book.png template",
+                    "$ref":        "lavender-common.json#/$defs/identifier"
+                },
+                "extend":                             {
+                    "title":       "Extend",
+                    "description": "Should you be adding content to another mod with a Lavender guidebook, you can set this property to extend the original mod's book with your own entries and categories. To read more on how this works, look at the respective article",
+                    "$ref":        "lavender-common.json#/$defs/identifier"
+                },
+                "dynamic_book_model":                 {
+                    "title":       "Dynamic Book Model",
+                    "description": "Lavender has a built-in book, the dynamic book, which uses NBT data to emulate any book currently loaded into the game. This is primarily of interest if you are a modpack developer and thus cannot register your own book item through Lavender's API. You can set this property to another item model's ID (e.g. mymodpack:my_book_model -> assets/mymodpack/models/item/my_book_model.json) to make the dynamic book use said model when it is emulating your book",
+                    "$ref":        "lavender-common.json#/$defs/identifier"
+                },
+                "dynamic_book_name":                  {
+                    "title":       "Dynamic Book Name",
+                    "description": "The name the dynamic book should display when it is set to emulate your book. This property expects a Minecraft text object (which can also be just a plain string)",
+                    "$ref":        "lavender-common.json#/$defs/text"
+                },
+                "open_sound":                         {
+                    "title":       "Open Sound",
+                    "description": "The sound played when the book is opened",
+                    "$ref":        "lavender-common.json#/$defs/identifier"
+                },
+                "flipping_sound":                     {
+                    "title":       "Flipping Sound",
+                    "description": "The sound played when the page is flipped",
+                    "$ref":        "lavender-common.json#/$defs/identifier"
+                },
+                "intro_entry":                        {
+                    "title":       "Intro Entry",
+                    "description": "The introduction entry shown when the book is first opened",
+                    "$ref":        "lavender-common.json#/$defs/identifier"
+                },
+                "display_completion":                 {
+                    "title":       "Display Completion",
+                    "description": "If some or all entries of your book are locked behind advancements, you can set this to true to make the book display a completion bar on the main index page and separately for each category",
+                    "type":        "boolean",
+                    "default":     false
+                },
+                "display_unread_entry_notifications": {
+                    "title":       "Display Unread Entry Notifications",
+                    "description": "If unread entry notifications should be shown",
+                    "type":        "boolean",
+                    "default":     true
+                },
+                "macros":                             {
+                    "title":       "Macros",
+                    "description": "The macros to be applied when processing the page contents",
+                    "$ref":        "#/$defs/macros"
+                }
+            }
+        },
+        "macros": {
+            "type":                 "object",
+            "additionalProperties": true
+        }
+    },
+    "$ref":    "#/$defs/book"
+}

@@ -1,0 +1,41 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title":   "Lavender Category",
+    "$defs":   {
+        "category": {
+            "type":       "object",
+            "properties": {
+                "parent":  {
+                    "title":       "Parent",
+                    "description": "The parent of this category",
+                    "$ref":        "lavender-common.json#/$defs/identifier_or_partial"
+                },
+                "title":   {
+                    "title":       "Title",
+                    "description": "The title of this category, to be displayed at the top of its landing page",
+                    "$ref":        "lavender-common.json#/$defs/text"
+                },
+                "icon":    {
+                    "title":       "Icon",
+                    "description": "An item to use as this category's icon in the index (optionally including NBT)",
+                    "$ref":        "lavender-common.json#/$defs/itemstack"
+                },
+                "secret":  {
+                    "title":       "Secret",
+                    "description": "If all entries in this category are currently locked or invisible to the player, don't show it all instead of simply displaying it as locked",
+                    "type":        "boolean",
+                    "default":     false
+                },
+                "ordinal": {
+                    "title":       "Ordinal",
+                    "description": "A sorting index for this category, displayed in ascending order. Categories with no ordinal are displayed last",
+                    "type":        "number"
+                }
+            },
+            "required":   [
+                "title"
+            ]
+        }
+    },
+    "$ref":    "#/$defs/category"
+}

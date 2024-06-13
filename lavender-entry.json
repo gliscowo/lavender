@@ -1,0 +1,58 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title":   "Lavender Entry",
+    "$defs":   {
+        "entry": {
+            "properties": {
+                "category":              {
+                    "title":       "Category",
+                    "description": "The category this entry belongs to",
+                    "$ref":        "lavender-common.json#/$defs/identifier_or_partial"
+                },
+                "title":                 {
+                    "title":       "Title",
+                    "description": "The title of this entry, to be displayed in the entry index and at top of the first page",
+                    "$ref":        "lavender-common.json#/$defs/text"
+                },
+                "icon":                  {
+                    "title":       "Icon",
+                    "description": "An item to use as this entry's icon in the index (optionally including NBT)",
+                    "$ref":        "lavender-common.json#/$defs/itemstack"
+                },
+                "secret":                {
+                    "title":       "Secret",
+                    "description": "If this entry is locked due to a missing advancement, don't show it to the player at all instead of simply displaying it as locked",
+                    "type":        "boolean",
+                    "default":     false
+                },
+                "ordinal":               {
+                    "title":       "Ordinal",
+                    "description": "A sorting index for this entry, displayed in ascending order. Entries with no ordinal are displayed last",
+                    "type":        "number"
+                },
+                "associated_items":      {
+                    "title":       "Associated Items",
+                    "description": "A list of item (with optional NBT) which should link to this entry in their tooltip and, if the respective item is a block item, when looking at said block while holding the book",
+                    "type":        "array",
+                    "items":       {
+                        "$ref": "lavender-common.json#/$defs/itemstacks"
+                    },
+                    "default":     [ ]
+                },
+                "required_advancements": {
+                    "title":       "Required Advancements",
+                    "description": "A list of advancement IDs which the player must have completed before they can view this entry. If display_completion is true in the book definition, a progress bar will indicate to the player how many entries they have unlocked/left to go",
+                    "type":        "array",
+                    "items":       {
+                        "$ref": "lavender-common.json#/$defs/identifier"
+                    },
+                    "default":     [ ]
+                }
+            },
+            "required":   [
+                "title"
+            ]
+        }
+    },
+    "$ref":    "#/$defs/entry"
+}
