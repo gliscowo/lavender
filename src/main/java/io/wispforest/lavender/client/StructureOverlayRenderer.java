@@ -278,8 +278,8 @@ public class StructureOverlayRenderer {
         return switch (PENDING_OVERLAY.rotation) {
             case NONE -> new Vec3i(-structure.anchor().getX(), -structure.anchor().getY(), -structure.anchor().getZ());
             case CLOCKWISE_90 -> new Vec3i(-structure.anchor().getZ(), -structure.anchor().getY(), -structure.anchor().getX());
-            case CLOCKWISE_180 -> new Vec3i(-structure.xSize + structure.anchor.getX() + 1, -structure.anchor().getY(), -structure.zSize + structure.anchor.getZ() + 1);
-            case COUNTERCLOCKWISE_90 -> new Vec3i(-structure.zSize + structure.anchor.getZ() + 1, -structure.anchor().getY(), -structure.xSize + structure.anchor.getX() + 1);
+            case CLOCKWISE_180 -> new Vec3i(-structure.xSize() + structure.anchor().getX() + 1, -structure.anchor().getY(), -structure.zSize() + structure.anchor().getZ() + 1);
+            case COUNTERCLOCKWISE_90 -> new Vec3i(-structure.zSize() + structure.anchor().getZ() + 1, -structure.anchor().getY(), -structure.xSize() + structure.anchor().getX() + 1);
         };
         // @formatter:on
     }
