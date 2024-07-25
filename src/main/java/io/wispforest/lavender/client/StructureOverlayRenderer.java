@@ -11,22 +11,31 @@ import io.wispforest.lavender.structure.StructureTemplate;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
-import io.wispforest.owo.ui.core.*;
+import io.wispforest.owo.ui.core.Easing;
+import io.wispforest.owo.ui.core.HorizontalAlignment;
+import io.wispforest.owo.ui.core.Insets;
+import io.wispforest.owo.ui.core.Positioning;
+import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.event.WindowResizeCallback;
 import io.wispforest.owo.ui.hud.Hud;
 import io.wispforest.owo.ui.util.Delta;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gl.SimpleFramebuffer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.OverlayVertexConsumer;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.RenderLayers;
+import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.model.ModelLoader;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.sound.SoundCategory;
+import net.minecraft.fluid.FluidState;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -36,6 +45,7 @@ import net.minecraft.util.Util;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.world.BlockRenderView;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL30C;
@@ -51,7 +61,7 @@ public class StructureOverlayRenderer {
 
         var framebuffer = new SimpleFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight(), true, MinecraftClient.IS_SYSTEM_MAC);
         ((LavenderFramebufferExtension)framebuffer).lavender$setBlitProgram(() -> {
-            LavenderClient.BLIT_ALPHA_PROGRAM.setAlpha(.5f);
+            LavenderClient.BLIT_ALPHA_PROGRAM.setAlpha(Lavender.CONFIG.structurePreviewAlpha());
             return LavenderClient.BLIT_ALPHA_PROGRAM.program();
         });
         framebuffer.setClearColor(0f, 0f, 0f, 0f);
@@ -157,6 +167,7 @@ public class StructureOverlayRenderer {
                         var entry = ACTIVE_OVERLAYS.get(anchor);
                         var structure = entry.fetchStructure();
                         if (structure == null) return true;
+                        var renderView = structure.asBlockRenderView();
 
                         // --- overlay rendering ---
 
@@ -172,24 +183,36 @@ public class StructureOverlayRenderer {
                             matrices.translate(anchor.getX(), anchor.getY(), anchor.getZ());
 
                             structure.forEachPredicate((pos, predicate) -> {
-                                var state = context.world().getBlockState(testPos.set(anchor).move(pos)).rotate(StructureTemplate.inverse(entry.rotation));
+                                var state = context.world()
+                                        .getBlockState(testPos.set(anchor).move(pos))
+                                        .rotate(StructureTemplate.inverse(entry.rotation));
                                 var result = predicate.test(state);
 
-                                if (result == BlockStatePredicate.Result.STATE_MATCH) {
+                                if (result == BlockStatePredicate.Result.STATE_MATCH)
                                     return;
-                                } else if (!state.isAir() && result == BlockStatePredicate.Result.NO_MATCH) {
-                                    hasInvalidBlock.setTrue();
+                                else if (entry.visibleLayer != -1 && pos.getY() != entry.visibleLayer)
+                                    return;
+                                else if (!state.isAir() && result == BlockStatePredicate.Result.NO_MATCH)
+                                    renderBlockBreaking(context, pos, state, hasInvalidBlock, matrices, client, testPos, overlayConsumer);
 
-                                    matrices.push();
-                                    matrices.translate(pos.getX(), pos.getY(), pos.getZ());
-                                    client.getBlockRenderManager().renderDamage(state, testPos, context.world(), matrices, overlayConsumer);
-                                    matrices.pop();
-                                }
-
-                                if (entry.visibleLayer != -1 && pos.getY() != entry.visibleLayer) return;
                                 renderOverlayBlock(matrices, CONSUMERS, pos, predicate, entry.rotation);
-
                             }, entry.rotation);
+                            CONSUMERS.draw(); // render blocks before fluids
+
+                            GlStateManager._depthMask(false); // Disable depth mask for rendering fluids
+                            var matrixStack = RenderSystem.getModelViewStack().pushMatrix();
+                            matrixStack.mul(matrices.peek().getPositionMatrix());
+                            RenderSystem.applyModelViewMatrix();
+                            structure.forEachPredicate((pos, predicate) -> {
+                                if (entry.visibleLayer != -1 && pos.getY() != entry.visibleLayer)
+                                    return;
+
+                                renderOverlayFluid(renderView, matrices, CONSUMERS, pos, predicate, entry.rotation);
+                            }, entry.rotation);
+                            CONSUMERS.draw(); // render fluids
+                            RenderSystem.getModelViewStack().popMatrix();
+                            RenderSystem.applyModelViewMatrix();
+                            GlStateManager._depthMask(true);
 
                             matrices.pop();
                         }
@@ -234,11 +257,23 @@ public class StructureOverlayRenderer {
                     var structure = PENDING_OVERLAY.fetchStructure();
                     if (structure != null) {
                         if (client.player.raycast(5, client.getRenderTickCounter().getTickDelta(false), false) instanceof BlockHitResult target) {
+                            var renderView = structure.asBlockRenderView();
                             var targetPos = target.getBlockPos().add(getPendingOffset(structure));
                             if (!client.player.isSneaking()) targetPos = targetPos.offset(target.getSide());
 
                             matrices.translate(targetPos.getX(), targetPos.getY(), targetPos.getZ());
                             structure.forEachPredicate((pos, predicate) -> renderOverlayBlock(matrices, CONSUMERS, pos, predicate, PENDING_OVERLAY.rotation), PENDING_OVERLAY.rotation);
+                            CONSUMERS.draw(); // render blocks before fluids
+
+                            GlStateManager._depthMask(false); // Disable depth mask for rendering fluids
+                            var matrixStack = RenderSystem.getModelViewStack().pushMatrix();
+                            matrixStack.mul(matrices.peek().getPositionMatrix());
+                            RenderSystem.applyModelViewMatrix();
+                            structure.forEachPredicate((pos, predicate) -> renderOverlayFluid(renderView, matrices, CONSUMERS, pos, predicate, PENDING_OVERLAY.rotation), PENDING_OVERLAY.rotation);
+                            CONSUMERS.draw(); // render fluids
+                            RenderSystem.getModelViewStack().popMatrix();
+                            RenderSystem.applyModelViewMatrix();
+                            GlStateManager._depthMask(true);
                         }
                     } else {
                         PENDING_OVERLAY = null;
@@ -294,7 +329,34 @@ public class StructureOverlayRenderer {
         // @formatter:on
     }
 
-    private static void renderOverlayBlock(MatrixStack matrices, VertexConsumerProvider consumers, BlockPos offsetInStructure, BlockStatePredicate block, BlockRotation rotation) {
+    private static void renderBlockBreaking(WorldRenderContext context, BlockPos pos, BlockState state, MutableBoolean hasInvalidBlock,
+                                            MatrixStack matrices, MinecraftClient client, BlockPos.Mutable testPos,
+                                            OverlayVertexConsumer overlayConsumer) {
+        hasInvalidBlock.setTrue();
+
+        matrices.push();
+        matrices.translate(pos.getX(), pos.getY(), pos.getZ());
+        client.getBlockRenderManager().renderDamage(state, testPos, context.world(), matrices, overlayConsumer);
+        matrices.pop();
+    }
+
+    private static void renderOverlayFluid(BlockRenderView renderView, MatrixStack matrices, VertexConsumerProvider consumers,
+                                           BlockPos offsetInStructure, BlockStatePredicate block, BlockRotation rotation) {
+        BlockState state = block.preview().rotate(rotation);
+        FluidState fluidState = state.getFluidState();
+
+        if (!fluidState.isEmpty()) {
+            RenderLayer renderLayer = RenderLayers.getFluidLayer(fluidState);
+            VertexConsumer consumer = consumers.getBuffer(renderLayer);
+            MinecraftClient.getInstance()
+                    .getBlockRenderManager()
+                    .renderFluid(offsetInStructure, renderView, consumer, state, fluidState);
+        }
+    }
+
+    private static void renderOverlayBlock(MatrixStack matrices, VertexConsumerProvider consumers, BlockPos offsetInStructure,
+                                           BlockStatePredicate block, BlockRotation rotation) {
+
         matrices.push();
         matrices.translate(offsetInStructure.getX(), offsetInStructure.getY(), offsetInStructure.getZ());
 
@@ -309,6 +371,7 @@ public class StructureOverlayRenderer {
                 LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE,
                 OverlayTexture.DEFAULT_UV
         );
+
         matrices.pop();
     }
 

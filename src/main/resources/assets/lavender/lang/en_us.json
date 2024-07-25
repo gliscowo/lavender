@@ -68,5 +68,7 @@
   ],
 
   "text.lavender.book.bookmark.add": "Add Bookmark",
-  "text.lavender.book.bookmark.remove_hint": {"text": "Shift-click to remove", "color": "dark_gray"}
+  "text.lavender.book.bookmark.remove_hint": {"text": "Shift-click to remove", "color": "dark_gray"},
+
+  "text.config.lavender.option.structurePreviewAlpha": "Structure Preview Alpha"
 }

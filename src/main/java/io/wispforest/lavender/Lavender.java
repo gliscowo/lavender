@@ -21,6 +21,7 @@ import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.PersistentState;
 import org.slf4j.Logger;
+import io.wispforest.lavender.LavenderConfig;
 
 import java.util.UUID;
 
@@ -31,6 +32,8 @@ public class Lavender implements ModInitializer {
     public static final SoundEvent ITEM_BOOK_OPEN = SoundEvent.of(id("item.book.open"));
 
     public static final Identifier WORLD_ID_CHANNEL = Lavender.id("world_id_channel");
+
+    public static final LavenderConfig CONFIG = LavenderConfig.createAndLoad();
 
     @Override
     public void onInitialize() {
