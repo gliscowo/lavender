@@ -7,55 +7,36 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wispforest.lavender.book.Book;
-import io.wispforest.lavender.book.LavenderBookItem;
 import io.wispforest.lavender.book.BookLoader;
+import io.wispforest.lavender.book.LavenderBookItem;
 import io.wispforest.lavender.client.StructureOverlayRenderer;
 import io.wispforest.lavender.structure.LavenderStructures;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.IdentifierArgumentType;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.component.Component;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-import static net.minecraft.server.command.CommandManager.argument;
-import static net.minecraft.server.command.CommandManager.literal;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
 public class LavenderCommands {
 
     private static final SimpleCommandExceptionType NO_SUCH_BOOK = new SimpleCommandExceptionType(Text.literal("No such book is loaded"));
 
-    private static final SuggestionProvider<ServerCommandSource> LOADED_BOOKS = (context, builder) -> {
+    private static final SuggestionProvider<FabricClientCommandSource> LOADED_BOOKS = (context, builder) -> {
         return CommandSource.suggestIdentifiers(BookLoader.loadedBooks().stream().map(Book::id), builder);
     };
-
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess access, CommandManager.RegistrationEnvironment environment) {
-        dispatcher.register(literal("get-lavender-book")
-                .then(argument("book_id", IdentifierArgumentType.identifier()).suggests(LOADED_BOOKS)
-                        .executes(context -> executeGetLavenderBook(context, false))
-                        .then(argument("force_dynamic_book", BoolArgumentType.bool())
-                                .executes(context -> executeGetLavenderBook(context, BoolArgumentType.getBool(context, "force_dynamic_book"))))));
-
-    }
-
-    private static int executeGetLavenderBook(CommandContext<ServerCommandSource> context, boolean forceDynamicBook) throws CommandSyntaxException {
-        var book = BookLoader.get(IdentifierArgumentType.getIdentifier(context, "book_id"));
-        if (book == null) {
-            throw NO_SUCH_BOOK.create();
-        }
-
-        context.getSource().getPlayer().getInventory().offerOrDrop(forceDynamicBook
-                ? LavenderBookItem.createDynamic(book)
-                : LavenderBookItem.itemOf(book)
-        );
-
-        return 0;
-    }
 
     @Environment(EnvType.CLIENT)
     public static class Client {
@@ -64,15 +45,65 @@ public class LavenderCommands {
         private static final SuggestionProvider<FabricClientCommandSource> STRUCTURE_INFO = (context, builder) ->
                 CommandSource.suggestMatching(LavenderStructures.loadedStructures().stream().map(Identifier::toString), builder);
 
+        private static int executeGetLavenderBook(CommandContext<FabricClientCommandSource> context, boolean forceDynamicBook) throws CommandSyntaxException {
+            var book = BookLoader.get(context.getArgument("book_id", Identifier.class));
+            if (book == null) {
+                throw NO_SUCH_BOOK.create();
+            }
+
+            var stack = forceDynamicBook
+                    ? LavenderBookItem.createDynamic(book)
+                    : LavenderBookItem.itemOf(book);
+
+            var command = "/give @s " + Registries.ITEM.getId(stack.getItem());
+
+            var ops = context.getSource().getWorld().getRegistryManager().getOps(NbtOps.INSTANCE);
+            var components = stack.getComponentChanges().entrySet().stream().flatMap(entry -> {
+                var componentType = entry.getKey();
+                var typeId = Registries.DATA_COMPONENT_TYPE.getId(componentType);
+                if (typeId == null) return Stream.empty();
+
+                var componentOptional = entry.getValue();
+                if (componentOptional.isPresent()) {
+                    Component<?> component = Component.of(componentType, componentOptional.get());
+                    return component.encode(ops).result().stream().map(value -> typeId + "=" + value);
+                } else {
+                    return Stream.of("!" + typeId);
+                }
+            }).collect(Collectors.joining(String.valueOf(',')));
+
+            if (!components.isEmpty()) {
+                command += "[" + components + "]";
+            }
+
+            if (stack.getCount() > 1) {
+                command += " " + stack.getCount();
+            }
+
+            var jAvAsE = command;
+            context.getSource().getClient().send(() -> {
+                context.getSource().getClient().setScreen(new ChatScreen(jAvAsE));
+            });
+
+            return 0;
+        }
+
         public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess access) {
-            dispatcher.register(ClientCommandManager.literal("structure-overlay")
-                    .then(ClientCommandManager.literal("clear-all").executes(context -> {
+            dispatcher.register(literal("get-lavender-book").requires(source -> source.hasPermissionLevel(2))
+                    .then(argument("book_id", IdentifierArgumentType.identifier()).suggests(LOADED_BOOKS)
+                            .executes(context -> executeGetLavenderBook(context, false))
+                            .then(argument("force_dynamic_book", BoolArgumentType.bool())
+                                    .executes(context -> executeGetLavenderBook(context, BoolArgumentType.getBool(context, "force_dynamic_book"))))));
+
+
+            dispatcher.register(literal("structure-overlay")
+                    .then(literal("clear-all").executes(context -> {
                         StructureOverlayRenderer.clearOverlays();
                         return 0;
                     }))
 
-                    .then(ClientCommandManager.literal("add")
-                            .then(ClientCommandManager.argument("structure", IdentifierArgumentType.identifier()).suggests(STRUCTURE_INFO).executes(context -> {
+                    .then(literal("add")
+                            .then(argument("structure", IdentifierArgumentType.identifier()).suggests(STRUCTURE_INFO).executes(context -> {
                                 var structureId = context.getArgument("structure", Identifier.class);
                                 if (LavenderStructures.get(structureId) == null) throw NO_SUCH_STRUCTURE.create();
 

@@ -7,7 +7,6 @@ import io.wispforest.endec.impl.StructEndecBuilder;
 import io.wispforest.lavender.book.LavenderBookItem;
 import io.wispforest.owo.serialization.CodecUtils;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.datafixer.DataFixTypes;
@@ -30,14 +29,10 @@ public class Lavender implements ModInitializer {
     public static final String MOD_ID = "lavender";
     public static final SoundEvent ITEM_BOOK_OPEN = SoundEvent.of(id("item.book.open"));
 
-    public static final Identifier WORLD_ID_CHANNEL = Lavender.id("world_id_channel");
-
     @Override
     public void onInitialize() {
         Registry.register(Registries.ITEM, id("dynamic_book"), LavenderBookItem.DYNAMIC_BOOK);
         Registry.register(Registries.SOUND_EVENT, ITEM_BOOK_OPEN.getId(), ITEM_BOOK_OPEN);
-
-        CommandRegistrationCallback.EVENT.register(LavenderCommands::register);
 
         PayloadTypeRegistry.playS2C().register(WorldUUIDPayload.ID, CodecUtils.toPacketCodec(WorldUUIDPayload.ENDEC));
 
