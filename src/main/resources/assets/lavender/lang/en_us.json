@@ -1,6 +1,8 @@
 {
   "item.lavender.dynamic_book": "Book",
 
+  "text.lavender.unknown_book": [{"text": "Unknown book: ", "color": "red"}, {"index": 0, "color": "gray"}],
+
   "text.lavender.structure_hud.completion": "%s: %s / %s",
   "text.lavender.entry_hud.sneak_to_view": {"text": "Sneak to view", "color": "gray"},
   "text.lavender.entry_hud.click_to_view": {"text": "Click to view", "color": "gray"},

@@ -143,16 +143,15 @@ public class LavenderBookItem extends Item {
 
         var bookId = bookIdOf(playerStack);
         if (bookId == null) return TypedActionResult.pass(playerStack);
+        if (!world.isClient) return TypedActionResult.success(playerStack);
 
         var book = BookLoader.get(bookId);
         if (book == null) {
-            Lavender.LOGGER.warn("Player {} tried to open unknown book with id '{}'", user.getGameProfile().getName(), bookId);
+            user.sendMessage(Text.translatable("text.lavender.unknown_book", bookId).formatted(Formatting.RED));
             return TypedActionResult.pass(playerStack);
         }
 
-        if (!world.isClient) return TypedActionResult.success(playerStack);
         openBookScreen(book);
-
         return TypedActionResult.success(playerStack);
     }
 
