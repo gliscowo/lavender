@@ -752,11 +752,12 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
             var indexPage = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
             this.pages.add(indexPage);
 
+            var rootCategories = book.categories().stream().filter(category -> category.parent() == null).toList();
             if (!book.categories().isEmpty()) {
                 var categories = this.pageWithHeader(Text.translatable("text.lavender.categories"));
                 categories.verticalSizing(Sizing.content());
 
-                var categoryContainer = this.buildCategoryIndex(book.categories().stream().filter(category -> category.parent() == null));
+                var categoryContainer = this.buildCategoryIndex(rootCategories.stream());
                 categories.child(categoryContainer);
 
                 categoryContainer.child(Components.item(LavenderBookItem.itemOf(this.context.book)).<ItemComponent>configure(categoryButton -> {
@@ -783,7 +784,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
             );
 
             int entriesOnCategoryPage = !book.categories().isEmpty()
-                    ? 150 - 36 - MathHelper.ceilDiv(book.categories().size() - 1, 4) * 24
+                    ? 150 - 36 - MathHelper.ceilDiv(rootCategories.size() + 1, 4) * 24
                     : 150;
 
             var orphanedEntries = this.buildEntryIndex(book.orphanedEntries(), true, entriesOnCategoryPage);
@@ -914,13 +915,13 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
             // --- category & entry index ---
 
             var categoryContainer = this.buildCategoryIndex(this.context.book.categories().stream().filter(category_ -> Objects.equals(category_.parent(), category.id())));
-            int entriesOnCategoryPage = !categoryContainer.children().isEmpty()
+            int spaceOnCategoryPage = !categoryContainer.children().isEmpty()
                     ? 125 - 15 - MathHelper.ceilDiv(categoryContainer.children().size(), 4) * 24
                     : 125;
 
             var entries = this.context.book.entriesByCategory(this.category);
             if (entries != null) {
-                var indexPages = this.buildEntryIndex(entries, true, entriesOnCategoryPage);
+                var indexPages = this.buildEntryIndex(entries, true, spaceOnCategoryPage);
                 for (int i = 0; i < indexPages.size(); i++) {
                     var page = i == 0
                             ? this.pageWithHeader(Text.translatable("text.lavender.index")).child(indexPages.get(0))
