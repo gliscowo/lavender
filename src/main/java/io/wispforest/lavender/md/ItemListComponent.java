@@ -9,15 +9,17 @@ import io.wispforest.owo.ui.component.ItemComponent;
 import io.wispforest.owo.ui.core.Component;
 import io.wispforest.owo.ui.parsing.UIModel;
 import io.wispforest.owo.ui.parsing.UIParsing;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.Ingredient;
+import net.minecraft.recipe.display.SlotDisplay;
+import net.minecraft.recipe.display.SlotDisplayContexts;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.Util;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 
@@ -72,17 +74,21 @@ public class ItemListComponent extends ItemComponent {
         }
     }
 
-    public ItemListComponent ingredient(Ingredient ingredient) {
-        this.items = ImmutableList.copyOf(ingredient.getMatchingStacks());
+    public ItemListComponent slotDisplay(SlotDisplay display) {
+        this.items = ImmutableList.copyOf(display.getStacks(SlotDisplayContexts.createParameters(MinecraftClient.getInstance().world)));
         this.updateForItems();
 
         return this;
     }
 
+    public ItemListComponent ingredient(Ingredient ingredient) {
+        return this.slotDisplay(ingredient.toDisplay());
+    }
+
     public ItemListComponent tag(TagKey<Item> tag) {
-        this.items = Registries.ITEM.getEntryList(tag)
-                .map(entries -> entries.stream().map(RegistryEntry::value).map(Item::getDefaultStack).collect(ImmutableList.toImmutableList()))
-                .orElse(ImmutableList.of());
+        this.items = Registries.ITEM.getOptional(tag)
+            .map(entries -> entries.stream().map(RegistryEntry::value).map(Item::getDefaultStack).collect(ImmutableList.toImmutableList()))
+            .orElse(ImmutableList.of());
         this.updateForItems();
 
         return this;
@@ -99,10 +105,10 @@ public class ItemListComponent extends ItemComponent {
 
         UIParsing.apply(children, "tag", tagElement -> TagKey.of(RegistryKeys.ITEM, UIParsing.parseIdentifier(tagElement)), this::tag);
         UIParsing.apply(
-                children,
-                "ingredient",
-                ingredientElement -> Ingredient.DISALLOW_EMPTY_CODEC.parse(JsonOps.INSTANCE, GSON.fromJson(ingredientElement.getTextContent().strip(), JsonElement.class)).getOrThrow(),
-                this::ingredient
+            children,
+            "ingredient",
+            ingredientElement -> Ingredient.CODEC.parse(JsonOps.INSTANCE, GSON.fromJson(ingredientElement.getTextContent().strip(), JsonElement.class)).getOrThrow(),
+            this::ingredient
         );
     }
 }

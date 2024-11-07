@@ -6,6 +6,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.JsonOps;
 import io.wispforest.lavender.Lavender;
+import io.wispforest.lavender.mixin.access.RegistryOpsAccessor;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.core.Component;
@@ -20,6 +21,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.RegistryOps;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.resource.*;
@@ -65,17 +67,17 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
                 var parentCategory = JsonHelper.getString(markdown.meta, "parent", null);
                 var parentCategoryId = parentCategory != null
-                        ? parentCategory.indexOf(':') > 0 ? Identifier.tryParse(parentCategory) : Identifier.of(identifier.getNamespace(), parentCategory)
-                        : null;
+                    ? parentCategory.indexOf(':') > 0 ? Identifier.tryParse(parentCategory) : Identifier.of(identifier.getNamespace(), parentCategory)
+                    : null;
 
                 book.addCategory(new Category(
-                        identifier,
-                        parentCategoryId,
-                        JsonHelper.getString(markdown.meta, "title"),
-                        getIcon(markdown.meta),
-                        JsonHelper.getBoolean(markdown.meta, "secret", false),
-                        JsonHelper.getInt(markdown.meta, "ordinal", Integer.MAX_VALUE),
-                        markdown.content
+                    identifier,
+                    parentCategoryId,
+                    JsonHelper.getString(markdown.meta, "title"),
+                    getIcon(markdown.meta),
+                    JsonHelper.getBoolean(markdown.meta, "secret", false),
+                    JsonHelper.getInt(markdown.meta, "ordinal", Integer.MAX_VALUE),
+                    markdown.content
                 ));
             });
         }
@@ -209,7 +211,9 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
                 if (meta.has(ResourceConditions.CONDITIONS_KEY)) {
                     var conditions = ResourceCondition.CONDITION_CODEC.parse(JsonOps.INSTANCE, meta.get(ResourceConditions.CONDITIONS_KEY));
-                    if (conditions.isSuccess() && !conditions.getOrThrow().test(MinecraftClient.getInstance().world.getRegistryManager())) {
+                    var infoGetter = ((RegistryOpsAccessor) RegistryOps.of(JsonOps.INSTANCE, MinecraftClient.getInstance().world.getRegistryManager())).lavender$getInfoGetter();
+
+                    if (conditions.isSuccess() && !conditions.getOrThrow().test(infoGetter)) {
                         return null;
                     }
                 }
@@ -245,17 +249,17 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
         var tagId = Identifier.tryParse(itemsString.substring(1));
         if (tagId == null) {
-            Lavender.LOGGER.warn("Could not parse tag ID '" + itemsString + "'");
+            Lavender.LOGGER.warn("Could not parse tag ID '{}'", itemsString);
             return List.of();
         }
 
-        var entryList = Registries.ITEM.getEntryList(TagKey.of(RegistryKeys.ITEM, tagId));
-        if (entryList.isEmpty()) {
-            Lavender.LOGGER.warn("Unknown item tag: '" + itemsString + "'");
+        var entries = Registries.ITEM.getOptional(TagKey.of(RegistryKeys.ITEM, tagId));
+        if (entries.isEmpty()) {
+            Lavender.LOGGER.warn("Unknown item tag: '{}'", itemsString);
             return List.of();
         }
 
-        return entryList.get().stream().map(RegistryEntry::value).map(Item::getDefaultStack).toList();
+        return entries.get().stream().map(RegistryEntry::value).map(Item::getDefaultStack).toList();
     }
 
     private static ItemStack itemStackFromString(String stackString) {

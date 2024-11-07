@@ -14,7 +14,7 @@ a
 
 ---
 
-<recipe;minecraft:weathered_cut_copper_slab_from_weathered_cut_copper_stonecutting>
+<recipe;minecraft:netherite_axe_smithing>
 
 ;;;;;
 

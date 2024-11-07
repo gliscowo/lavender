@@ -1,6 +1,7 @@
 package io.wispforest.lavender.client;
 
 import io.wispforest.lavender.Lavender;
+import io.wispforest.lavender.LavenderClientRecipeCache;
 import io.wispforest.lavender.LavenderCommands;
 import io.wispforest.lavender.book.Book;
 import io.wispforest.lavender.book.BookContentLoader;
@@ -30,6 +31,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
@@ -38,6 +40,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
@@ -51,15 +54,22 @@ public class LavenderClient implements ClientModInitializer {
 
     private static UUID currentWorldId = null;
 
+    public static @Nullable Framebuffer mainTargetOverride = null;
+
     @Override
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register(LavenderCommands.Client::register);
 
         ModelLoadingPlugin.register(pluginContext -> {
-            pluginContext.resolveModel().register(context -> {
-                if (!context.id().equals(Lavender.id("item/dynamic_book"))) return null;
+            pluginContext.modifyModelOnLoad().register((model, context) -> {
+                if (!Objects.equals(context.resourceId(), Lavender.id("item/dynamic_book"))) return model;
                 return new BookBakedModel.Unbaked();
             });
+
+            // pluginContext.resolveModel().register(context -> {
+            //     if (!context.id().equals(Lavender.id("item/dynamic_book"))) return null;
+            //     return new BookBakedModel.Unbaked();
+            // });
         });
 
         StructureOverlayRenderer.initialize();
@@ -122,6 +132,8 @@ public class LavenderClient implements ClientModInitializer {
             player.swingHand(hand);
             return ActionResult.FAIL;
         });
+
+        LavenderClientRecipeCache.initializeClient();
 
         ClientPlayNetworking.registerGlobalReceiver(Lavender.WorldUUIDPayload.ID, (payload, context) -> {
             currentWorldId = payload.worldUuid();

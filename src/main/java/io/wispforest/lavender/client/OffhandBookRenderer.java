@@ -28,10 +28,10 @@ public class OffhandBookRenderer {
     private static final Supplier<Framebuffer> BACK_BUFFER = Suppliers.memoize(() -> {
         var window = MinecraftClient.getInstance().getWindow();
 
-        var framebuffer = new SimpleFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight(), true, MinecraftClient.IS_SYSTEM_MAC);
+        var framebuffer = new SimpleFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight(), true);
         ((LavenderFramebufferExtension) framebuffer).lavender$setBlitProgram(() -> {
             GlStateManager._colorMask(true, true, true, true);
-            return LavenderClient.BLIT_CUTOUT_PROGRAM.program();
+            return LavenderClient.BLIT_CUTOUT_PROGRAM.key();
         });
         framebuffer.setClearColor(0f, 0f, 0f, 0f);
         return framebuffer;
@@ -40,7 +40,7 @@ public class OffhandBookRenderer {
     private static final Supplier<Framebuffer> DISPLAY_BUFFER = Suppliers.memoize(() -> {
         var window = MinecraftClient.getInstance().getWindow();
 
-        var framebuffer = new SimpleFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight(), true, MinecraftClient.IS_SYSTEM_MAC);
+        var framebuffer = new SimpleFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight(), true);
         framebuffer.setClearColor(0f, 0f, 0f, 0f);
         return framebuffer;
     });
@@ -50,8 +50,8 @@ public class OffhandBookRenderer {
 
     public static void initialize() {
         WindowResizeCallback.EVENT.register((client, window) -> {
-            DISPLAY_BUFFER.get().resize(window.getFramebufferWidth(), window.getFramebufferHeight(), MinecraftClient.IS_SYSTEM_MAC);
-            BACK_BUFFER.get().resize(window.getFramebufferWidth(), window.getFramebufferHeight(), MinecraftClient.IS_SYSTEM_MAC);
+            DISPLAY_BUFFER.get().resize(window.getFramebufferWidth(), window.getFramebufferHeight());
+            BACK_BUFFER.get().resize(window.getFramebufferWidth(), window.getFramebufferHeight());
             cachedScreen = null;
         });
     }
@@ -83,24 +83,25 @@ public class OffhandBookRenderer {
             modelView.pushMatrix();
             modelView.identity();
             modelView.translate(0, 0, -2000);
-            RenderSystem.applyModelViewMatrix();
 
-            backBuffer.clear(MinecraftClient.IS_SYSTEM_MAC);
+            backBuffer.clear();
             backBuffer.beginWrite(false);
+            LavenderClient.mainTargetOverride = backBuffer;
 
             screen.render(new DrawContext(client, client.getBufferBuilders().getEntityVertexConsumers()), -69, -69, 0);
             RenderSystem.disableDepthTest();
 
             modelView.popMatrix();
-            RenderSystem.applyModelViewMatrix();
 
             var displayBuffer = DISPLAY_BUFFER.get();
-            displayBuffer.clear(MinecraftClient.IS_SYSTEM_MAC);
+            displayBuffer.clear();
             displayBuffer.beginWrite(false);
+            LavenderClient.mainTargetOverride = displayBuffer;
 
-            backBuffer.draw(backBuffer.textureWidth, backBuffer.textureHeight, false);
+            backBuffer.drawInternal(backBuffer.textureWidth, backBuffer.textureHeight);
 
             client.getFramebuffer().beginWrite(false);
+            LavenderClient.mainTargetOverride = null;
         } finally {
             rendering = false;
         }

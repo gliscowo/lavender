@@ -36,7 +36,7 @@ public class ItemTagFeature implements MarkdownFeature {
             if (tagId == null) return false;
 
             var tagKey = TagKey.of(RegistryKeys.ITEM, tagId);
-            if (Registries.ITEM.getEntryList(tagKey).isEmpty()) return false;
+            if (Registries.ITEM.getOptional(tagKey).isEmpty()) return false;
 
             tokens.add(new ItemTagToken(tagString, tagKey));
             return true;

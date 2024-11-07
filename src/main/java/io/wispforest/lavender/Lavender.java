@@ -5,6 +5,7 @@ import io.wispforest.endec.Endec;
 import io.wispforest.endec.impl.BuiltInEndecs;
 import io.wispforest.endec.impl.StructEndecBuilder;
 import io.wispforest.lavender.book.LavenderBookItem;
+import io.wispforest.owo.network.OwoNetChannel;
 import io.wispforest.owo.serialization.CodecUtils;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -29,16 +30,20 @@ public class Lavender implements ModInitializer {
     public static final String MOD_ID = "lavender";
     public static final SoundEvent ITEM_BOOK_OPEN = SoundEvent.of(id("item.book.open"));
 
+    public static final OwoNetChannel CHANNEL = OwoNetChannel.create(Lavender.id("main"));
+
     @Override
     public void onInitialize() {
         Registry.register(Registries.ITEM, id("dynamic_book"), LavenderBookItem.DYNAMIC_BOOK);
-        Registry.register(Registries.SOUND_EVENT, ITEM_BOOK_OPEN.getId(), ITEM_BOOK_OPEN);
+        Registry.register(Registries.SOUND_EVENT, ITEM_BOOK_OPEN.id(), ITEM_BOOK_OPEN);
 
         PayloadTypeRegistry.playS2C().register(WorldUUIDPayload.ID, CodecUtils.toPacketCodec(WorldUUIDPayload.ENDEC));
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             sender.sendPacket(new WorldUUIDPayload(server.getOverworld().getPersistentStateManager().getOrCreate(WorldUUIDState.TYPE, "lavender_world_id").id));
         });
+
+        LavenderClientRecipeCache.initialize();
     }
 
     public static Identifier id(String path) {

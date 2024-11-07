@@ -1,22 +1,21 @@
 package io.wispforest.lavender.structure;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import io.wispforest.lavender.Lavender;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.minecraft.resource.JsonDataLoader;
+import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.profiler.Profiler;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,27 +65,33 @@ public class LavenderStructures {
         });
     }
 
-    private static class ReloadListener extends JsonDataLoader implements IdentifiableResourceReloadListener {
-        public ReloadListener() {
-            super(new GsonBuilder().setLenient().disableHtmlEscaping().create(), "lavender/structures");
+    private static class ReloadListener implements SimpleSynchronousResourceReloadListener {
+
+        @Override
+        public void reload(ResourceManager manager) {
+            PENDING_STRUCTURES.clear();
+
+            var resourceFinder = ResourceFinder.json("lavender/structures");
+            for (var entry : resourceFinder.findResources(manager).entrySet()) {
+                var resourceId = entry.getKey();
+                var structureId = resourceFinder.toResourceId(resourceId);
+
+                try (var reader = entry.getValue().getReader()) {
+                    var json = JsonParser.parseReader(reader);
+
+                    if (!json.isJsonObject()) return;
+                    PENDING_STRUCTURES.put(structureId, json.getAsJsonObject());
+                } catch (IllegalArgumentException | IOException | JsonParseException error) {
+                    Lavender.LOGGER.error("Couldn't parse data file '{}' from '{}'", structureId, resourceId, error);
+                }
+            }
+
+            if (tagsAvailable) tryParseStructures();
         }
 
         @Override
         public Identifier getFabricId() {
             return Lavender.id("structure_info_loader");
         }
-
-        @Override
-        protected void apply(Map<Identifier, JsonElement> prepared, ResourceManager manager, Profiler profiler) {
-            PENDING_STRUCTURES.clear();
-
-            prepared.forEach((resourceId, jsonElement) -> {
-                if (!jsonElement.isJsonObject()) return;
-                PENDING_STRUCTURES.put(resourceId, jsonElement.getAsJsonObject());
-            });
-
-            if (tagsAvailable) tryParseStructures();
-        }
     }
-
 }

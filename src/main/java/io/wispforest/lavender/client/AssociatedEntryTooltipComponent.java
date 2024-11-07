@@ -29,14 +29,14 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
         this.layout = Containers.horizontalFlow(Sizing.content(), Sizing.content()).gap(2);
 
         this.layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                .child(entry.iconFactory().apply(Sizing.fixed(16)).margins(Insets.of(2)))
-                .child(Components.item(book).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(11, 11)).zIndex(50)));
+            .child(entry.iconFactory().apply(Sizing.fixed(16)).margins(Insets.of(2)))
+            .child(Components.item(book).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(11, 11)).zIndex(50)));
 
         this.layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                .child(Components.label(Text.literal(entry.title()).formatted(Formatting.GRAY)))
-                .child(Components.label(progress >= .05f
-                        ? Text.translatable("text.lavender.entry_tooltip.progress", "|".repeat((int) (30 * progress)), "|".repeat((int) Math.ceil(30 * (1 - progress))))
-                        : Text.translatable("text.lavender.entry_tooltip"))));
+            .child(Components.label(Text.literal(entry.title()).formatted(Formatting.GRAY)))
+            .child(Components.label(progress >= .05f
+                ? Text.translatable("text.lavender.entry_tooltip.progress", "|".repeat((int) (30 * progress)), "|".repeat((int) Math.ceil(30 * (1 - progress))))
+                : Text.translatable("text.lavender.entry_tooltip"))));
 
         this.layout.verticalAlignment(VerticalAlignment.CENTER);
 
@@ -45,7 +45,7 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
     }
 
     @Override
-    public void drawItems(TextRenderer textRenderer, int x, int y, DrawContext context) {
+    public void drawItems(TextRenderer textRenderer, int x, int y, int width, int height, DrawContext context) {
         context = OwoUIDrawContext.of(context);
         context.getMatrices().push();
         context.getMatrices().translate(0, 0, 1000);
@@ -57,7 +57,7 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
     }
 
     @Override
-    public int getHeight() {
+    public int getHeight(TextRenderer textRenderer) {
         return this.layout.height();
     }
 

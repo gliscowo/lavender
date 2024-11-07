@@ -1,8 +1,8 @@
 package io.wispforest.lavender.md.features;
 
+import io.wispforest.lavender.LavenderClientRecipeCache;
 import io.wispforest.lavender.md.ItemListComponent;
 import io.wispforest.lavender.md.compiler.BookCompiler;
-import io.wispforest.lavender.pond.SmithingRecipeAccessor;
 import io.wispforest.lavendermd.Lexer;
 import io.wispforest.lavendermd.MarkdownFeature;
 import io.wispforest.lavendermd.Parser;
@@ -16,9 +16,11 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.recipe.*;
+import net.minecraft.recipe.display.SlotDisplayContexts;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.context.ContextParameterMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,22 +35,23 @@ public class RecipeFeature implements MarkdownFeature {
 
     public static final RecipePreviewBuilder<CraftingRecipe> CRAFTING_PREVIEW_BUILDER = new RecipePreviewBuilder<>() {
         @Override
-        public @NotNull Component buildRecipePreview(BookCompiler.ComponentSource componentSource, RecipeEntry<CraftingRecipe> recipeEntry) {
+        public @NotNull Component buildRecipePreview(BookCompiler.ComponentSource componentSource, ContextParameterMap slotContext, RecipeEntry<CraftingRecipe> recipeEntry) {
             var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "crafting-recipe");
+            var value = recipeEntry.value();
 
-            this.populateIngredientsGrid(recipeEntry, recipeEntry.value().getIngredients(), recipeComponent.childById(ParentComponent.class, "input-grid"), 3, 3);
-            recipeComponent.childById(ItemComponent.class, "output").stack(recipeEntry.value().getResult(MinecraftClient.getInstance().world.getRegistryManager()));
+            this.populateIngredientsGrid(recipeEntry, recipeComponent.childById(ParentComponent.class, "input-grid"), 3, 3);
+            recipeComponent.childById(ItemComponent.class, "output").stack(value.getDisplays().getFirst().result().getFirst(slotContext));
 
             return recipeComponent;
         }
     };
 
-    public static final RecipePreviewBuilder<AbstractCookingRecipe> SMELTING_PREVIEW_BUILDER = (componentSource, recipeEntry) -> {
+    public static final RecipePreviewBuilder<AbstractCookingRecipe> SMELTING_PREVIEW_BUILDER = (componentSource, slotContext, recipeEntry) -> {
         var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smelting-recipe");
 
-        recipeComponent.childById(ItemListComponent.class, "input").ingredient(recipe.getIngredients().get(0));
-        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getResult(MinecraftClient.getInstance().world.getRegistryManager()));
+        recipeComponent.childById(ItemListComponent.class, "input").ingredient(recipe.ingredient());
+        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getDisplays().getFirst().result().getFirst(slotContext));
 
         var workstation = ItemStack.EMPTY;
         if (recipe instanceof SmeltingRecipe) workstation = Items.FURNACE.getDefaultStack();
@@ -60,39 +63,28 @@ public class RecipeFeature implements MarkdownFeature {
         return recipeComponent;
     };
 
-    public static final RecipePreviewBuilder<SmithingRecipe> SMITHING_PREVIEW_BUILDER = (componentSource, recipeEntry) -> {
+    public static final RecipePreviewBuilder<SmithingRecipe> SMITHING_PREVIEW_BUILDER = (componentSource, slotContext, recipeEntry) -> {
         var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smithing-recipe");
 
-        if (recipe instanceof SmithingRecipeAccessor accessor) {
-            recipeComponent.childById(ItemListComponent.class, "input-1").ingredient(accessor.lavender$getTemplate());
-            recipeComponent.childById(ItemListComponent.class, "input-2").ingredient(accessor.lavender$getBase());
-            recipeComponent.childById(ItemListComponent.class, "input-3").ingredient(accessor.lavender$getAddition());
-        }
+        recipe.template().ifPresent(ingredient -> recipeComponent.childById(ItemListComponent.class, "input-1").ingredient(ingredient));
+        recipe.base().ifPresent(ingredient -> recipeComponent.childById(ItemListComponent.class, "input-2").ingredient(ingredient));
+        recipe.addition().ifPresent(ingredient -> recipeComponent.childById(ItemListComponent.class, "input-3").ingredient(ingredient));
 
-        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getResult(MinecraftClient.getInstance().world.getRegistryManager()));
+        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getDisplays().getFirst().result().getFirst(slotContext));
 
         return recipeComponent;
     };
 
-    public static final RecipePreviewBuilder<StonecuttingRecipe> STONECUTTING_PREVIEW_BUILDER = (componentSource, recipeEntry) -> {
+    public static final RecipePreviewBuilder<StonecuttingRecipe> STONECUTTING_PREVIEW_BUILDER = (componentSource, slotContext, recipeEntry) -> {
         var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "stonecutting-recipe");
 
-        recipeComponent.childById(ItemListComponent.class, "input").ingredient(recipe.getIngredients().get(0));
-        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getResult(MinecraftClient.getInstance().world.getRegistryManager()));
+        recipeComponent.childById(ItemListComponent.class, "input").ingredient(recipe.ingredient());
+        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getDisplays().getFirst().result().getFirst(slotContext));
 
         return recipeComponent;
     };
-
-    @Deprecated(forRemoval = true)
-    public static final RecipePreviewBuilder<CraftingRecipe> CRAFTING_HANDLER = CRAFTING_PREVIEW_BUILDER;
-    @Deprecated(forRemoval = true)
-    public static final RecipePreviewBuilder<AbstractCookingRecipe> SMELTING_HANDLER = SMELTING_PREVIEW_BUILDER;
-    @Deprecated(forRemoval = true)
-    public static final RecipePreviewBuilder<SmithingRecipe> SMITHING_HANDLER = SMITHING_PREVIEW_BUILDER;
-    @Deprecated(forRemoval = true)
-    public static final RecipePreviewBuilder<StonecuttingRecipe> STONECUTTING_HANDLER = STONECUTTING_PREVIEW_BUILDER;
 
     public RecipeFeature(BookCompiler.ComponentSource bookComponentSource, @Nullable Map<RecipeType<?>, RecipePreviewBuilder<?>> previewBuilders) {
         this.bookComponentSource = bookComponentSource;
@@ -128,7 +120,7 @@ public class RecipeFeature implements MarkdownFeature {
             var recipeId = Identifier.tryParse(recipeIdString);
             if (recipeId == null) return false;
 
-            var recipe = MinecraftClient.getInstance().world.getRecipeManager().get(recipeId);
+            var recipe = LavenderClientRecipeCache.getOrFetchRecipe(recipeId);
             if (recipe.isEmpty()) return false;
 
             //noinspection unchecked
@@ -140,8 +132,8 @@ public class RecipeFeature implements MarkdownFeature {
     @Override
     public void registerNodes(NodeRegistrar registrar) {
         registrar.registerNode(
-                (parser, recipeToken, tokens) -> new RecipeNode(recipeToken.recipe),
-                (token, tokens) -> token instanceof RecipeToken recipe ? recipe : null
+            (parser, recipeToken, tokens) -> new RecipeNode(recipeToken.recipe),
+            (token, tokens) -> token instanceof RecipeToken recipe ? recipe : null
         );
     }
 
@@ -168,13 +160,13 @@ public class RecipeFeature implements MarkdownFeature {
         protected void visitStart(MarkdownCompiler<?> compiler) {
             var previewBuilder = (RecipePreviewBuilder) RecipeFeature.this.previewBuilders.get(this.recipe.value().getType());
             if (previewBuilder != null) {
-                ((OwoUICompiler) compiler).visitComponent(previewBuilder.buildRecipePreview(RecipeFeature.this.bookComponentSource, this.recipe));
+                ((OwoUICompiler) compiler).visitComponent(previewBuilder.buildRecipePreview(RecipeFeature.this.bookComponentSource, SlotDisplayContexts.createParameters(MinecraftClient.getInstance().world), this.recipe));
             } else {
                 ((OwoUICompiler) compiler).visitComponent(
-                        Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                                .child(Components.label(Text.literal("No preview builder registered for recipe type '" + Registries.RECIPE_TYPE.getId(this.recipe.value().getType()) + "'")).horizontalSizing(Sizing.fill(100)))
-                                .padding(Insets.of(10))
-                                .surface(Surface.flat(0x77A00000).and(Surface.outline(0x77FF0000)))
+                    Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                        .child(Components.label(Text.literal("No preview builder registered for recipe type '" + Registries.RECIPE_TYPE.getId(this.recipe.value().getType()) + "'")).horizontalSizing(Sizing.fill(100)))
+                        .padding(Insets.of(10))
+                        .surface(Surface.flat(0x77A00000).and(Surface.outline(0x77FF0000)))
                 );
             }
         }
@@ -186,7 +178,7 @@ public class RecipeFeature implements MarkdownFeature {
     @FunctionalInterface
     public interface RecipePreviewBuilder<R extends Recipe<?>> {
         @NotNull
-        Component buildRecipePreview(BookCompiler.ComponentSource componentSource, RecipeEntry<R> recipeEntry);
+        Component buildRecipePreview(BookCompiler.ComponentSource componentSource, ContextParameterMap slotContext, RecipeEntry<R> recipeEntry);
 
         default void populateIngredients(RecipeEntry<R> recipe, List<Ingredient> ingredients, ParentComponent componentContainer) {
             for (int i = 0; i < ingredients.size(); i++) {
@@ -195,17 +187,12 @@ public class RecipeFeature implements MarkdownFeature {
             }
         }
 
-        default void populateIngredientsGrid(RecipeEntry<R> recipe, List<Ingredient> ingredients, ParentComponent componentContainer, int gridWidth, int gridHeight) {
-            ((RecipeGridAligner<Ingredient>) (input, slot, amount, gridX, gridY) -> {
-                if (!(componentContainer.children().get(slot) instanceof ItemListComponent ingredient)) return;
-                ingredient.ingredient(input);
-            }).alignRecipeToGrid(gridWidth, gridHeight, 9, recipe, ingredients.iterator(), 0);
+        default void populateIngredientsGrid(RecipeEntry<R> recipe, ParentComponent componentContainer, int gridWidth, int gridHeight) {
+            var ingredients = recipe.value().getIngredientPlacement().getIngredients();
+            RecipeGridAligner.alignRecipeToGrid(gridWidth, gridHeight, recipe.value(), recipe.value().getIngredientPlacement().getPlacementSlots(), (input, index, x, y) -> {
+                if (input.isEmpty() || !(componentContainer.children().get(index) instanceof ItemListComponent ingredient)) return;
+                ingredient.ingredient(ingredients.get(input.get().placerOutputPosition()));
+            });
         }
     }
-
-    /**
-     * @deprecated Use {@link RecipePreviewBuilder} instead
-     */
-    @Deprecated(forRemoval = true)
-    public interface RecipeHandler<R extends Recipe<?>> extends RecipePreviewBuilder<R> {}
 }

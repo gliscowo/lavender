@@ -18,24 +18,20 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
-
 
 public class BookBakedModel extends ForwardingBakedModel {
 
     private final ModelOverrideList overrides = new ModelOverrideList() {
-        @Nullable
         @Override
-        public BakedModel apply(BakedModel model, ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity entity, int seed) {
+        public @Nullable BakedModel getModel(ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity entity, int seed) {
             var book = LavenderBookItem.bookOf(stack);
-            if (book == null || book.dynamicBookModel() == null) return model;
+            if (book == null || book.dynamicBookModel() == null) return null;
 
             var bookModel = MinecraftClient.getInstance().getBakedModelManager().getModel(new ModelIdentifier(book.dynamicBookModel(), "inventory"));
             return bookModel != MinecraftClient.getInstance().getBakedModelManager().getMissingModel()
-                    ? bookModel
-                    : model;
+                ? bookModel
+                : null;
         }
     };
 
@@ -53,8 +49,8 @@ public class BookBakedModel extends ForwardingBakedModel {
         public static final Identifier BROWN_BOOK_ID = Lavender.id("item/brown_book");
 
         @Override
-        public Collection<Identifier> getModelDependencies() {
-            return List.of(BROWN_BOOK_ID);
+        public void resolve(Resolver resolver) {
+            resolver.resolve(BROWN_BOOK_ID);
         }
 
         @Nullable
@@ -62,9 +58,5 @@ public class BookBakedModel extends ForwardingBakedModel {
         public BakedModel bake(Baker baker, Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings rotationContainer) {
             return new BookBakedModel(baker.bake(BROWN_BOOK_ID, rotationContainer));
         }
-
-        @Override
-        public void setParents(Function<Identifier, UnbakedModel> modelLoader) {}
-
     }
 }

@@ -1,8 +1,8 @@
 {
-  "vertex": "blit_screen",
-  "fragment": "lavender:blit_alpha",
+  "vertex": "core/blit_screen",
+  "fragment": "lavender:core/blit_alpha",
   "samplers": [
-    { "name": "DiffuseSampler" }
+    { "name": "InSampler" }
   ],
   "uniforms": [
     { "name": "Alpha", "type": "float", "count": 1, "values": [ 1.0 ] }

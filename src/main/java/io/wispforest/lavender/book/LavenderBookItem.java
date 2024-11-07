@@ -14,11 +14,13 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,7 +40,7 @@ public class LavenderBookItem extends Item {
                     .build()
     );
 
-    public static final LavenderBookItem DYNAMIC_BOOK = new LavenderBookItem(null, new Settings().maxCount(1));
+    public static final LavenderBookItem DYNAMIC_BOOK = new LavenderBookItem(null, new Settings().maxCount(1).registryKey(RegistryKey.of(RegistryKeys.ITEM, Lavender.id("dynamic_book"))));
 
     private static final Map<Identifier, LavenderBookItem> BOOK_ITEMS = new HashMap<>();
 
@@ -72,7 +74,7 @@ public class LavenderBookItem extends Item {
      * item for the book referred to by the given {@code bookId}
      */
     public static LavenderBookItem registerForBook(@NotNull Identifier bookId, @NotNull Identifier itemId, Settings settings) {
-        return registerForBook(Registry.register(Registries.ITEM, itemId, new LavenderBookItem(bookId, settings)));
+        return registerForBook(Registry.register(Registries.ITEM, itemId, new LavenderBookItem(bookId, settings.registryKey(RegistryKey.of(RegistryKeys.ITEM, itemId)))));
     }
 
     /**
@@ -138,21 +140,21 @@ public class LavenderBookItem extends Item {
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+    public ActionResult use(World world, PlayerEntity user, Hand hand) {
         var playerStack = user.getStackInHand(hand);
 
         var bookId = bookIdOf(playerStack);
-        if (bookId == null) return TypedActionResult.pass(playerStack);
-        if (!world.isClient) return TypedActionResult.success(playerStack);
+        if (bookId == null) return ActionResult.SUCCESS;
+        if (!world.isClient) return ActionResult.SUCCESS;
 
         var book = BookLoader.get(bookId);
         if (book == null) {
-            user.sendMessage(Text.translatable("text.lavender.unknown_book", bookId).formatted(Formatting.RED));
-            return TypedActionResult.pass(playerStack);
+            user.sendMessage(Text.translatable("text.lavender.unknown_book", bookId).formatted(Formatting.RED), false);
+            return ActionResult.PASS;
         }
 
         openBookScreen(book);
-        return TypedActionResult.success(playerStack);
+        return ActionResult.SUCCESS;
     }
 
     @Environment(EnvType.CLIENT)

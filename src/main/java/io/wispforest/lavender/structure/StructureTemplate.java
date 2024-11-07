@@ -242,7 +242,7 @@ public class StructureTemplate {
             }
 
             try {
-                var result = BlockArgumentParser.blockOrTag(Registries.BLOCK.getReadOnlyWrapper(), entry.getValue().getAsString(), false);
+                var result = BlockArgumentParser.blockOrTag(Registries.BLOCK, entry.getValue().getAsString(), false);
                 if (result.left().isPresent()) {
                     var predicate = result.left().get();
 

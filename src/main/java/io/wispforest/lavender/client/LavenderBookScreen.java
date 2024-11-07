@@ -1,8 +1,8 @@
 package io.wispforest.lavender.client;
 
 import com.google.common.collect.Iterables;
+import com.mojang.blaze3d.systems.ProjectionType;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.*;
 import io.wispforest.lavender.md.ItemListComponent;
@@ -40,6 +40,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -209,7 +210,8 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         this.rebuildContent(!this.isOverlay ? this.book.openSound() : null);
     }
 
-    private void rebuildContent(@Nullable SoundEvent sound) {
+    @ApiStatus.Internal
+    public void rebuildContent(@Nullable SoundEvent sound) {
         var pageSupplier = this.currentNavFrame().replicator().pageSupplier.apply(this);
         int selectedPage = this.currentNavFrame().selectedPage;
 
@@ -357,7 +359,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                 0,
                 1000,
                 21000
-        ), VertexSorter.BY_Z);
+        ), ProjectionType.ORTHOGRAPHIC);
 
         super.render(context, mouseX, mouseY, delta);
         context.draw();
@@ -477,14 +479,6 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
      */
     public static void pushEntry(Book book, Entry entry) {
         getNavTrail(book).add(0, new NavFrame.Replicator(screen -> new EntryPageSupplier(screen, entry), 0));
-    }
-
-    /**
-     * Use {@link #registerRecipePreviewBuilder(Identifier, RecipeType, RecipeFeature.RecipePreviewBuilder)} instead
-     */
-    @Deprecated(forRemoval = true)
-    public static <R extends Recipe<?>> void registerRecipeHandler(Identifier bookId, RecipeType<R> recipeType, RecipeFeature.RecipeHandler<R> handler) {
-        registerRecipePreviewBuilder(bookId, recipeType, handler);
     }
 
     /**
