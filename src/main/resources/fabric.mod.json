@@ -31,9 +31,9 @@
   "depends": {
     "fabricloader": ">=0.15.0",
     "fabric": "*",
-    "minecraft": ">=1.21",
-    "owo-lib": ">=0.12.10",
-    "lavender-md": ">=0.1.1",
+    "minecraft": ">=1.21.2",
+    "owo-lib": ">=0.12.18",
+    "lavender-md": ">=0.1.2",
     "lavender-md-owo-ui": "*"
   }
 }
