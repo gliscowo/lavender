@@ -608,9 +608,34 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                             if (!entryVisible) return;
 
                             var entryTitle = entry.title().toLowerCase(Locale.ROOT);
+
+                            var entryMatches = true;
                             for (var term : filter) {
-                                if (!entryTitle.contains(term)) return;
+                                if (!entryTitle.contains(term)) {
+                                    entryMatches = false;
+                                    break;
+                                }
                             }
+
+                            // If the title doesn't match, check each additional term in turn.
+                            if (!entryMatches) {
+                                for (var extraTerm : entry.additionalSearchTerms()) {
+                                    var termMatches = true;
+                                    for (var term : filter) {
+                                        if (!extraTerm.contains(term)) {
+                                            termMatches = false;
+                                            break;
+                                        }
+                                    }
+
+                                    if (termMatches) {
+                                        entryMatches = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!entryMatches) return;
                         }
 
                         FlowLayout indexItem;
