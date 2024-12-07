@@ -131,8 +131,16 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 }
 
                 var entry = new Entry(
-                        identifier, entryCategories, title, icon, secret, ordinal, requiredAdvancements.build(),
-                        associatedItems.build(), additionalSearchTerms.build(), markdown.content
+                        identifier,
+                        entryCategories,
+                        title,
+                        icon,
+                        secret,
+                        ordinal,
+                        requiredAdvancements.build(),
+                        associatedItems.build(),
+                        additionalSearchTerms.build(),
+                        markdown.content
                 );
                 if (entry.id().getPath().equals("landing_page")) {
                     book.setLandingPage(entry);
