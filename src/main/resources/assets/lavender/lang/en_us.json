@@ -24,6 +24,12 @@
   "text.lavender.structure_component.layer_tooltip": "Layer: %d",
   "text.lavender.structure_component.all_layers_tooltip": "All layers",
 
+  "text.lavender.toast.new_entries": [
+    "",
+    {"text": "New entries unlocked:\n", "color": "yellow"},
+    {"index": 0}
+  ],
+
   "text.lavender.keybind_tooltip": [
     {"text": "Key Bind:\n "},
     {"index": 0, "color": "gray"},

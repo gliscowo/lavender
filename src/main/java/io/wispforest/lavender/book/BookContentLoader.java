@@ -262,7 +262,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         return entries.get().stream().map(RegistryEntry::value).map(Item::getDefaultStack).toList();
     }
 
-    private static ItemStack itemStackFromString(String stackString) {
+    public static ItemStack itemStackFromString(String stackString) {
         try {
             var parsed = new ItemStringReader(MinecraftClient.getInstance().world.getRegistryManager()).consume(new StringReader(stackString));
 

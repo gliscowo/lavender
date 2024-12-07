@@ -37,6 +37,7 @@ public final class Book {
     private final @Nullable Identifier introEntry;
     private final boolean displayUnreadEntryNotifications;
     private final boolean displayCompletion;
+    private final @Nullable ToastSettings newEntriesToast;
     private final Map<String, String> zeroArgMacros = new HashMap<>();
     private final Map<Pattern, Macro> macros = new HashMap<>();
 
@@ -58,17 +59,18 @@ public final class Book {
     private @Nullable Entry landingPage = null;
 
     public Book(
-            Identifier id,
-            @Nullable Identifier extend,
-            @Nullable Identifier texture,
-            @Nullable Identifier dynamicBookModel,
-            @Nullable Text dynamicBookName,
-            @Nullable SoundEvent openSound,
-            @Nullable SoundEvent flippingSound,
-            @Nullable Identifier introEntry,
-            boolean displayUnreadEntryNotifications,
-            boolean displayCompletion,
-            Map<String, String> macros
+        Identifier id,
+        @Nullable Identifier extend,
+        @Nullable Identifier texture,
+        @Nullable Identifier dynamicBookModel,
+        @Nullable Text dynamicBookName,
+        @Nullable SoundEvent openSound,
+        @Nullable SoundEvent flippingSound,
+        @Nullable Identifier introEntry,
+        boolean displayUnreadEntryNotifications,
+        boolean displayCompletion,
+        @Nullable ToastSettings newEntriesToast,
+        Map<String, String> macros
     ) {
         this.id = id;
         this.extend = extend;
@@ -80,6 +82,7 @@ public final class Book {
         this.introEntry = introEntry;
         this.displayUnreadEntryNotifications = displayUnreadEntryNotifications;
         this.displayCompletion = displayCompletion;
+        this.newEntriesToast = newEntriesToast;
 
         macros.forEach((macro, replacement) -> {
             int argCount = (int) MACRO_ARG_PATTERN.matcher(replacement).results().count();
@@ -104,8 +107,8 @@ public final class Book {
 
                 parts.add(result.toString());
                 this.macros.put(
-                        Pattern.compile(Pattern.quote(macro) + "\\(" + Stream.generate(() -> "(.*)").limit(argCount).collect(Collectors.joining(",")) + "\\)"),
-                        new Macro(parts, argIndices)
+                    Pattern.compile(Pattern.quote(macro) + "\\(" + Stream.generate(() -> "(.*)").limit(argCount).collect(Collectors.joining(",")) + "\\)"),
+                    new Macro(parts, argIndices)
                 );
             } else {
                 this.zeroArgMacros.put(macro, replacement);
@@ -135,8 +138,8 @@ public final class Book {
 
     public @Nullable Entry introEntry() {
         return this.introEntry != null
-                ? this.entryById(this.introEntry)
-                : null;
+            ? this.entryById(this.introEntry)
+            : null;
     }
 
     public @Nullable Entry entryById(Identifier entryId) {
@@ -238,6 +241,10 @@ public final class Book {
         return this.flippingSound;
     }
 
+    public @Nullable ToastSettings newEntriesToast() {
+        return this.newEntriesToast;
+    }
+
     public int countVisibleEntries(ClientPlayerEntity player) {
         int visible = 0;
         for (var entry : this.entriesById.values()) {
@@ -290,18 +297,18 @@ public final class Book {
 
         if (scans >= 1000) {
             Lavender.LOGGER.warn(
-                    "Preprocessing of entry {} in book {} failed: Macro expansion proceeded for over 1000 scans, a circular macro invocation is likely",
-                    entry,
-                    this.id
+                "Preprocessing of entry {} in book {} failed: Macro expansion proceeded for over 1000 scans, a circular macro invocation is likely",
+                entry,
+                this.id
             );
 
             return """
-                    {red}**Entry processing failed:**{}
-                                        
-                                        
-                    Macro expansion proceeded for over 1000 scans without reaching
-                    a result - this is almost definitely due to a circular macro invocation
-                    """;
+                {red}**Entry processing failed:**{}
+                
+                
+                Macro expansion proceeded for over 1000 scans without reaching
+                a result - this is almost definitely due to a circular macro invocation
+                """;
         } else {
             return builder.toString();
         }
@@ -322,8 +329,8 @@ public final class Book {
                 for (var category : entry.categories()) {
                     if (this.categories.containsKey(category)) {
                         this.entriesByCategory
-                                .computeIfAbsent(this.categories.get(category), $ -> new ArrayList<>())
-                                .add(entry);
+                            .computeIfAbsent(this.categories.get(category), $ -> new ArrayList<>())
+                            .add(entry);
                     } else {
                         throw new RuntimeException("Could not load entry '" + entry.id() + "' because category '" + category + "' was not found in book '" + this.effectiveId() + "'");
                     }
@@ -372,4 +379,6 @@ public final class Book {
             return result.toString();
         }
     }
+
+    public record ToastSettings(ItemStack iconStack, Text bookName, @Nullable Identifier backgroundSprite) {}
 }

@@ -3,10 +3,7 @@ package io.wispforest.lavender.client;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.LavenderClientRecipeCache;
 import io.wispforest.lavender.LavenderCommands;
-import io.wispforest.lavender.book.Book;
-import io.wispforest.lavender.book.BookContentLoader;
-import io.wispforest.lavender.book.BookLoader;
-import io.wispforest.lavender.book.LavenderBookItem;
+import io.wispforest.lavender.book.*;
 import io.wispforest.lavender.md.ItemListComponent;
 import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.owo.ui.component.Components;
@@ -29,7 +26,6 @@ import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -103,11 +99,11 @@ public class LavenderClient implements ClientModInitializer {
                 if (associatedEntry == null || !associatedEntry.canPlayerView(client.player)) return;
 
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                        .child(associatedEntry.iconFactory().apply(Sizing.fixed(16)).margins(Insets.of(0, 1, 0, 1)))
-                        .child(Components.item(LavenderBookItem.itemOf(book)).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(9, 9)).zIndex(50)));
+                    .child(associatedEntry.iconFactory().apply(Sizing.fixed(16)).margins(Insets.of(0, 1, 0, 1)))
+                    .child(Components.item(LavenderBookItem.itemOf(book)).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(9, 9)).zIndex(50)));
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                        .child(Components.label(Text.literal(associatedEntry.title())).shadow(true))
-                        .child(Components.label(Text.translatable(client.player.isSneaking() ? "text.lavender.entry_hud.click_to_view" : "text.lavender.entry_hud.sneak_to_view"))));
+                    .child(Components.label(Text.literal(associatedEntry.title())).shadow(true))
+                    .child(Components.label(Text.translatable(client.player.isSneaking() ? "text.lavender.entry_hud.click_to_view" : "text.lavender.entry_hud.sneak_to_view"))));
             });
         });
 
@@ -131,6 +127,12 @@ public class LavenderClient implements ClientModInitializer {
 
             player.swingHand(hand);
             return ActionResult.FAIL;
+        });
+
+        ClientNewEntriesUnlockedCallback.EVENT.register((client, book, newEntryCount) -> {
+            if (book.newEntriesToast() != null) {
+                client.getToastManager().add(new NewEntriesToast(book.newEntriesToast()));
+            }
         });
 
         LavenderClientRecipeCache.initializeClient();

@@ -1,7 +1,7 @@
 package io.wispforest.lavender.book;
 
 import com.google.common.collect.ImmutableSet;
-import io.wispforest.lavender.mixin.ClientAdvancementManagerAccessor;
+import io.wispforest.lavender.mixin.access.ClientAdvancementManagerAccessor;
 import io.wispforest.owo.ui.core.Component;
 import io.wispforest.owo.ui.core.Sizing;
 import net.minecraft.client.network.ClientPlayerEntity;
