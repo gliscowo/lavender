@@ -6,5 +6,10 @@
   "macros": {
     "nested_macro": "ah yes: $1",
     "macro_moment": "that's pretty nested_macro($1) - $2"
+  },
+  "new_entries_toast": {
+    "icon_stack": "lavender-flower:the_book",
+    "book_name": "The Book™",
+    "background_sprite": "minecraft:toast/system"
   }
 }

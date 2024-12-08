@@ -6,6 +6,11 @@
   "associated_items": [
     "minecraft:enchanted_book{StoredEnchantments:[{id:'minecraft:unbreaking', lvl:3s}]}",
     "#minecraft:candles"
+  ],
+  "additional_search_terms": [
+    "incredible",
+    "im 14 and this is deep",
+    "I NEED PSYCHIATRIC HELP"
   ]
 }
 ```

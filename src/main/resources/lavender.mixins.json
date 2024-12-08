@@ -9,7 +9,7 @@
     "access.SmithingTrimRecipeAccessor"
   ],
   "client": [
-    "ClientAdvancementManagerAccessor",
+    "ClientAdvancementManagerMixin",
     "CreativeInventoryScreenMixin",
     "DrawContextMixin",
     "FramebufferMixin",
@@ -18,7 +18,8 @@
     "MouseMixin",
     "ScreenMixin",
     "SimpleResourceReloadMixin",
-    "TextureUtilMixin"
+    "TextureUtilMixin",
+    "access.ClientAdvancementManagerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
