@@ -20,6 +20,7 @@ public record Entry(
         int ordinal,
         ImmutableSet<Identifier> requiredAdvancements,
         ImmutableSet<ItemStack> associatedItems,
+        ImmutableSet<String> additionalSearchTerms,
         String content
 ) implements Book.BookmarkableElement {
 
