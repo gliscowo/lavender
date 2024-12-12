@@ -6,7 +6,6 @@ import com.mojang.serialization.JsonOps;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.client.BookBakedModel;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
-import net.minecraft.client.util.ModelIdentifier;
 import net.minecraft.registry.Registries;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
@@ -14,7 +13,6 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TextCodecs;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
-import net.minecraft.util.Util;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -89,7 +87,36 @@ public class BookLoader {
             var displayUnreadEntryNotifications = JsonHelper.getBoolean(bookObject, "display_unread_entry_notifications", true);
             var macros = GSON.fromJson(JsonHelper.getObject(bookObject, "macros", new JsonObject()), MACROS_TOKEN);
 
-            var book = new Book(resourceId, extendId, textureId, dynamicBookModelId, dynamicBookName, openSoundEvent, flippingSoundEvent, introEntryId, displayUnreadEntryNotifications, displayCompletion, macros);
+            Book.ToastSettings newEntriesToast = null;
+            if (bookObject.has("new_entries_toast")) {
+                var toastObject = bookObject.getAsJsonObject("new_entries_toast");
+
+                Identifier backgroundSprite = null;
+                if (toastObject.has("background_sprite")) {
+                    backgroundSprite = Identifier.of(JsonHelper.getString(toastObject, "background_sprite"));
+                }
+
+                newEntriesToast = new Book.ToastSettings(
+                    BookContentLoader.itemStackFromString(JsonHelper.getString(toastObject, "icon_stack")),
+                    TextCodecs.CODEC.parse(JsonOps.INSTANCE, toastObject.get("book_name")).getOrThrow(JsonParseException::new),
+                    backgroundSprite
+                );
+            }
+
+            var book = new Book(
+                resourceId,
+                extendId,
+                textureId,
+                dynamicBookModelId,
+                dynamicBookName,
+                openSoundEvent,
+                flippingSoundEvent,
+                introEntryId,
+                displayUnreadEntryNotifications,
+                displayCompletion,
+                newEntriesToast,
+                macros
+            );
             LOADED_BOOKS.put(resourceId, book);
             if (extendId == null) VISIBLE_BOOKS.put(resourceId, book);
         });

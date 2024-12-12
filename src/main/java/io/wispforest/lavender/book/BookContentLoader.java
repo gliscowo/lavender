@@ -119,7 +119,27 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                     requiredAdvancements.add(advancementId);
                 }
 
-                var entry = new Entry(identifier, entryCategories, title, icon, secret, ordinal, requiredAdvancements.build(), associatedItems.build(), markdown.content);
+                var additionalSearchTerms = new ImmutableSet.Builder<String>();
+                for (var termElement : JsonHelper.getArray(markdown.meta, "additional_search_terms", new JsonArray())) {
+                    if (!termElement.isJsonPrimitive()) continue;
+
+                    var term = termElement.getAsString();
+                    // Lowercase the term in advance to save a little time when searching.
+                    additionalSearchTerms.add(term.toLowerCase(Locale.ROOT));
+                }
+
+                var entry = new Entry(
+                        identifier,
+                        entryCategories,
+                        title,
+                        icon,
+                        secret,
+                        ordinal,
+                        requiredAdvancements.build(),
+                        associatedItems.build(),
+                        additionalSearchTerms.build(),
+                        markdown.content
+                );
                 if (entry.id().getPath().equals("landing_page")) {
                     book.setLandingPage(entry);
                 } else {
@@ -258,7 +278,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         return entryList.get().stream().map(RegistryEntry::value).map(Item::getDefaultStack).toList();
     }
 
-    private static ItemStack itemStackFromString(String stackString) {
+    public static ItemStack itemStackFromString(String stackString) {
         try {
             var parsed = new ItemStringReader(MinecraftClient.getInstance().world.getRegistryManager()).consume(new StringReader(stackString));
 

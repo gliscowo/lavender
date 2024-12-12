@@ -1,4 +1,4 @@
-package io.wispforest.lavender.mixin;
+package io.wispforest.lavender.mixin.access;
 
 import net.minecraft.advancement.AdvancementEntry;
 import net.minecraft.advancement.AdvancementProgress;
