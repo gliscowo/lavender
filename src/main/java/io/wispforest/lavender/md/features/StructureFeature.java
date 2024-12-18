@@ -108,15 +108,15 @@ public class StructureFeature implements MarkdownFeature {
         protected void visitStart(MarkdownCompiler<?> compiler) {
             var structureComponent = StructureFeature.this.bookComponentSource.builtinTemplate(
                     ParentComponent.class,
-                    this.structure.ySize > 1 ? "structure-preview-with-layers" : "structure-preview",
-                    Map.of("structure", this.structure.id.toString(), "angle", String.valueOf(this.angle))
+                    this.structure.ySize() > 1 ? "structure-preview-with-layers" : "structure-preview",
+                    Map.of("structure", this.structure.id().toString(), "angle", String.valueOf(this.angle))
             );
 
             var structurePreview = structureComponent.childById(StructureComponent.class, "structure").placeable(this.placeable);
             var layerSlider = structureComponent.childById(SlimSliderComponent.class, "layer-slider");
 
             if (layerSlider != null) {
-                layerSlider.max(0).min(this.structure.ySize).tooltipSupplier(layer -> {
+                layerSlider.max(0).min(this.structure.ySize()).tooltipSupplier(layer -> {
                     return layer > 0
                             ? Text.translatable("text.lavender.structure_component.layer_tooltip", layer.intValue())
                             : Text.translatable("text.lavender.structure_component.all_layers_tooltip");
@@ -124,7 +124,7 @@ public class StructureFeature implements MarkdownFeature {
                     structurePreview.visibleLayer((int) layer - 1);
                 });
 
-                layerSlider.value(StructureOverlayRenderer.getLayerRestriction(this.structure.id) + 1);
+                layerSlider.value(StructureOverlayRenderer.getLayerRestriction(this.structure.id()) + 1);
             }
 
             ((OwoUICompiler) compiler).visitComponent(structureComponent);

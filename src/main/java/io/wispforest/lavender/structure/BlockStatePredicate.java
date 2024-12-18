@@ -17,9 +17,11 @@ public interface BlockStatePredicate {
      * a full state match
      */
     BlockStatePredicate NULL_PREDICATE = new BlockStatePredicate() {
+        private static final BlockState[] PREVIEW_STATES = {Blocks.AIR.getDefaultState()};
+
         @Override
-        public BlockState preview() {
-            return Blocks.AIR.getDefaultState();
+        public BlockState[] previewBlockstates() {
+            return PREVIEW_STATES;
         }
 
         @Override
@@ -38,9 +40,11 @@ public interface BlockStatePredicate {
      * match on any air block
      */
     BlockStatePredicate AIR_PREDICATE = new BlockStatePredicate() {
+        private static final BlockState[] PREVIEW_STATES = {Blocks.AIR.getDefaultState()};
+
         @Override
-        public BlockState preview() {
-            return Blocks.AIR.getDefaultState();
+        public BlockState[] previewBlockstates() {
+            return PREVIEW_STATES;
         }
 
         @Override
@@ -69,7 +73,15 @@ public interface BlockStatePredicate {
      * is called every frame the preview is rendered, returning a different sample
      * depending on system time (e.g. to cycle to a block tag) is valid behavior
      */
-    BlockState preview();
+    default BlockState preview() {
+        BlockState[] states = this.previewBlockstates();
+        return states[(int) (System.currentTimeMillis() / 1000 % states.length)];
+    }
+
+    /**
+     * @return An array of all possible preview block states.
+     */
+    BlockState[] previewBlockstates();
 
     /**
      * @return Whether this predicate falls into the given matching category, generally
