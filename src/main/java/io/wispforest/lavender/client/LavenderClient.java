@@ -29,6 +29,7 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.render.item.model.ItemModelTypes;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -56,17 +57,19 @@ public class LavenderClient implements ClientModInitializer {
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register(LavenderCommands.Client::register);
 
-        ModelLoadingPlugin.register(pluginContext -> {
-            pluginContext.modifyModelOnLoad().register((model, context) -> {
-                if (!Objects.equals(context.resourceId(), Lavender.id("item/dynamic_book"))) return model;
-                return new BookBakedModel.Unbaked();
-            });
+        ItemModelTypes.ID_MAPPER.put(Lavender.id("dynamic_book_model"), UnbakedBookModel.CODEC);
 
-            // pluginContext.resolveModel().register(context -> {
-            //     if (!context.id().equals(Lavender.id("item/dynamic_book"))) return null;
-            //     return new BookBakedModel.Unbaked();
-            // });
-        });
+//        ModelLoadingPlugin.register(pluginContext -> {
+//            pluginContext.modifyModelOnLoad().register((model, context) -> {
+//                if (!Objects.equals(context.id(), Lavender.id("item/dynamic_book"))) return model;
+//                return new BookBakedModel.Unbaked();
+//            });
+//
+//            // pluginContext.resolveModel().register(context -> {
+//            //     if (!context.id().equals(Lavender.id("item/dynamic_book"))) return null;
+//            //     return new BookBakedModel.Unbaked();
+//            // });
+//        });
 
         StructureOverlayRenderer.initialize();
         OffhandBookRenderer.initialize();

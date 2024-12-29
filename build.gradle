@@ -41,8 +41,6 @@ repositories {
 
     // modmenu
     maven { url "https://maven.terraformersmc.com/releases/" }
-
-    mavenLocal()
 }
 
 dependencies {

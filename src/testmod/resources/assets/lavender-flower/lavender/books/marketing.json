@@ -1,3 +1,4 @@
 {
-  "display_completion": true
+  "display_completion": true,
+  "dynamic_book_model": "lavender-flower:marketing_book"
 }

@@ -26,6 +26,7 @@ import io.wispforest.owo.ui.util.CommandOpenedScreen;
 import io.wispforest.owo.ui.util.UISounds;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -369,6 +370,30 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
     }
 
     @Override
+    protected void drawComponentTooltip(DrawContext drawContext, int mouseX, int mouseY, float tickDelta) {
+        mouseX = (int) (mouseX * this.window.getScaleFactor() / this.scaleFactor);
+        mouseY = (int) (mouseY * this.window.getScaleFactor() / this.scaleFactor);
+
+        double gameScale = this.window.getScaleFactor();
+        this.window.setScaleFactor(this.scaleFactor);
+
+        RenderSystem.backupProjectionMatrix();
+        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(
+            0,
+            this.window.getFramebufferWidth() / (float) this.scaleFactor,
+            this.window.getFramebufferHeight() / (float) this.scaleFactor,
+            0,
+            1000,
+            21000
+        ), ProjectionType.ORTHOGRAPHIC);
+
+        super.drawComponentTooltip(drawContext, mouseX, mouseY, tickDelta);
+        drawContext.draw();
+
+        RenderSystem.restoreProjectionMatrix();
+        this.window.setScaleFactor(gameScale);
+    }
+    @Override
     public boolean charTyped(char chr, int modifiers) {
         if (super.charTyped(chr, modifiers)) return true;
 
@@ -401,11 +426,16 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
     }
 
     @Override
+    public Optional<Element> hoveredElement(double mouseX, double mouseY) {
+        return super.hoveredElement(mouseX, mouseY).flatMap(element -> element != this.uiAdapter ? Optional.of(element) : Optional.empty());
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
         mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
 
-        if (super.mouseClicked(mouseX, mouseY, button)) return true;
+        if (this.uiAdapter.mouseClicked(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button)) return true;
 
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             this.navPop();
@@ -424,7 +454,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
         mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return this.uiAdapter.mouseDragged(mouseX, mouseY, button, deltaX, deltaY) || super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     }
 
     @Override
@@ -439,7 +469,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
         mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
 
-        if (super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)) return true;
+        if (this.uiAdapter.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount) || super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)) return true;
         this.turnPage(verticalAmount < 0);
 
         return true;

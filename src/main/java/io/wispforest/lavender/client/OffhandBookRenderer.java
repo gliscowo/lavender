@@ -151,9 +151,6 @@ public class OffhandBookRenderer {
         }
 
         @Override
-        public void load(ResourceManager manager) {}
-
-        @Override
         public void clearGlId() {}
     }
 }

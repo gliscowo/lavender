@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "lavender:dynamic_book_model",
+    "default": {
+      "type": "minecraft:model",
+      "model": "lavender:item/brown_book"
+    }
+  }
+}

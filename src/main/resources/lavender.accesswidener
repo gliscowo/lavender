@@ -1,2 +1,2 @@
 accessWidener v2 named
-extendable method net/minecraft/client/render/model/json/ModelOverrideList <init> ()V
+#extendable method net/minecraft/client/render/model/json/ModelOverrideList <init> ()V

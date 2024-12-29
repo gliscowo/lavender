@@ -32,7 +32,6 @@ public class BookLoader {
 
     public static void initialize() {
         ModelLoadingPlugin.register(context -> {
-            context.addModels(BookBakedModel.Unbaked.BROWN_BOOK_ID);
             for (var book : VISIBLE_BOOKS.values()) {
                 if (book.dynamicBookModel() == null) return;
                 context.addModels(book.dynamicBookModel());
